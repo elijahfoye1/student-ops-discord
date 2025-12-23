@@ -238,6 +238,11 @@ def process_earnings(watchlists, webhooks, dedupe, dry_run):
     
     for item in earnings_items:
         item_id = item.get("id", "")
+        
+        # Only process recent items (last 24 hours)
+        if not is_recent(item, hours=24):
+            continue
+        
         if not dedupe.check_and_mark("earnings", item_id):
             continue
         
@@ -270,6 +275,11 @@ def process_macro(webhooks, dedupe, dry_run):
     
     for item in macro_items:
         item_id = item.get("id", "")
+        
+        # Only process recent items (last 24 hours)
+        if not is_recent(item, hours=24):
+            continue
+        
         if not dedupe.check_and_mark("macro", item_id):
             continue
         
