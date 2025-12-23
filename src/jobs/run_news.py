@@ -2,9 +2,11 @@
 
 import argparse
 import logging
+from datetime import timedelta
 
 from src.common.storage import StateStore
 from src.common.dedupe import Deduplicator, cleanup_old_events
+from src.common.time import parse_iso, now_utc
 from src.common.discord import (
     get_webhook, build_news_embed, Embed, EmbedField, COLORS
 )
@@ -22,6 +24,24 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+
+def is_recent(item, hours=24):
+    """
+    Check if a news item was published within the last N hours.
+    
+    Returns True if recent or if no publish date (benefit of doubt).
+    """
+    published = item.get("published_at")
+    if not published:
+        return True  # No date, assume recent
+    
+    pub_dt = parse_iso(published)
+    if not pub_dt:
+        return True  # Can't parse, assume recent
+    
+    cutoff = now_utc() - timedelta(hours=hours)
+    return pub_dt >= cutoff
 
 
 def run(dry_run: bool = False):
@@ -79,6 +99,11 @@ def run(dry_run: bool = False):
     for item in filtered:
         item_id = item.get("id", "")
         if not item_id:
+            continue
+        
+        # IMPORTANT: Only post items from the last 24 hours
+        # This prevents re-posting historical items when state is reset
+        if not is_recent(item, hours=24):
             continue
         
         # Dedupe
