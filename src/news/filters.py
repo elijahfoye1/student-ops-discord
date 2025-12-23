@@ -90,6 +90,28 @@ def matches_keywords(text: str, keywords: List[str]) -> List[str]:
     return matched
 
 
+# Keywords that indicate NOISE (routine, administrative items) - skip these entirely
+NOISE_KEYWORDS = [
+    "enforcement action", "enforcement actions", "terminates enforcement",
+    "application", "approval", "announces approval",
+    "staff manual", "supervision", "supervising",
+    "former employee", "issues enforcement",
+    "pricing", "payment services", "check services", "debit card",
+    "reappointment", "reserve bank president", "first vice president",
+    "public input", "request comment", "requests comment",
+    "biennial report", "request public input",
+    "bank holding company", "eligible financial institutions",
+    "withdraws", "policy statement regarding", "responsible innovation",
+    "supervised banks", "facilitat"
+]
+
+
+def is_noise(text: str) -> bool:
+    """Check if content is routine/administrative noise."""
+    text_lower = text.lower()
+    return any(noise in text_lower for noise in NOISE_KEYWORDS)
+
+
 def calculate_impact_score(
     news_item: Dict[str, Any],
     watchlists: Dict[str, Any]
@@ -98,14 +120,20 @@ def calculate_impact_score(
     Calculate impact score for a news item.
     
     Score is 0-100 where higher = more important.
+    Returns 0 for noise items.
     """
-    score = 30  # Base score
-    
     title = news_item.get("title", "")
     summary = news_item.get("summary", "")
+    combined = title + " " + summary
+    
+    # FIRST: Check if this is noise - return 0 immediately
+    if is_noise(combined):
+        return 0
+    
+    score = 30  # Base score
+    
     category = news_item.get("category", "general")
     source = news_item.get("source", "")
-    combined = title + " " + summary
     
     # Ticker matches
     tickers = extract_tickers(combined, watchlists.get("tickers", []))
@@ -143,18 +171,12 @@ def calculate_impact_score(
 def should_post(
     news_item: Dict[str, Any],
     watchlists: Dict[str, Any],
-    min_score: int = 40
+    min_score: int = 50  # Raised from 40
 ) -> bool:
     """
     Determine if a news item should be posted.
     
-    Args:
-        news_item: The news item to check
-        watchlists: Watchlist configuration
-        min_score: Minimum impact score to post
-    
-    Returns:
-        True if the item should be posted.
+    STRICT filtering - only major announcements.
     """
     # Calculate score
     score = calculate_impact_score(news_item, watchlists)
@@ -167,28 +189,38 @@ def should_post(
     summary = news_item.get("summary", "")
     category = news_item.get("category", "general")
     combined = title + " " + summary
+    combined_lower = combined.lower()
+    
+    # MAJOR action words - must have one of these for most categories
+    major_action_words = [
+        "launches", "announces", "releases", "unveils", "introduces",
+        "acquires", "merger", "ipo", "earnings", "quarterly results",
+        "beats", "misses", "guidance", "layoffs", "cuts jobs",
+        "breakthrough", "partnership", "deal", "billion", "million"
+    ]
+    has_major_action = any(word in combined_lower for word in major_action_words)
     
     # Category-specific rules
     if category == "earnings":
-        # Earnings: always post if watchlist ticker
+        # Earnings: must be watchlist ticker + have earnings-related content
         tickers = extract_tickers(combined, watchlists.get("tickers", []))
-        return len(tickers) > 0
+        earnings_words = ["earnings", "revenue", "eps", "quarterly", "guidance", "beats", "misses"]
+        has_earnings = any(word in combined_lower for word in earnings_words)
+        return len(tickers) > 0 and has_earnings
     
     elif category == "ai":
-        # AI: need keyword match + action word
+        # AI: need keyword match + MAJOR action word + high score
         ai_keywords = matches_keywords(combined, watchlists.get("ai_keywords", []))
-        action_words = ["launches", "announces", "releases", "introduces", "unveils"]
-        has_action = any(word in combined.lower() for word in action_words)
-        return len(ai_keywords) > 0 and (has_action or score >= 60)
+        return len(ai_keywords) > 0 and has_major_action and score >= 60
     
     elif category == "macro":
-        # Macro: need macro keyword match
+        # Macro: handled by macro.py's strict filtering
         macro_keywords = matches_keywords(combined, watchlists.get("macro_keywords", []))
-        return len(macro_keywords) > 0
+        return len(macro_keywords) > 0 and score >= 55
     
     else:
-        # General: high score threshold
-        return score >= 60
+        # General: very high threshold + must have major action
+        return score >= 70 and has_major_action
 
 
 def filter_news(

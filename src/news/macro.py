@@ -10,57 +10,79 @@ from src.news.sources import RSSFetcher, NewsItem
 logger = logging.getLogger(__name__)
 
 
-# Major macro event types
+# Major macro event types - ONLY high-impact announcements
 MACRO_EVENTS = {
     "FOMC": {
-        "keywords": ["fomc", "federal open market", "fed meeting", "rate decision"],
+        "keywords": ["fomc", "federal open market", "rate decision", "interest rate decision"],
+        "required_keywords": ["rate", "decision", "projections", "statement"],  # Must also have one of these
         "emoji": "🏦",
         "importance": "high"
     },
     "CPI": {
-        "keywords": ["cpi", "consumer price index", "inflation data", "inflation report"],
+        "keywords": ["cpi", "consumer price index", "inflation"],
+        "required_keywords": ["report", "data", "release", "rose", "fell", "percent"],
         "emoji": "📊",
         "importance": "high"
     },
     "PCE": {
-        "keywords": ["pce", "personal consumption", "core pce"],
+        "keywords": ["pce", "personal consumption expenditures"],
+        "required_keywords": ["report", "data", "release", "rose", "fell", "percent"],
         "emoji": "📊",
         "importance": "high"
     },
     "JOBS": {
-        "keywords": ["nonfarm payroll", "jobs report", "unemployment rate", "jobless claims"],
+        "keywords": ["nonfarm payroll", "jobs report", "employment report"],
+        "required_keywords": ["added", "jobs", "unemployment", "report"],
         "emoji": "👷",
         "importance": "high"
     },
     "GDP": {
-        "keywords": ["gdp", "gross domestic product", "economic growth"],
+        "keywords": ["gdp", "gross domestic product"],
+        "required_keywords": ["growth", "percent", "quarter", "annual"],
         "emoji": "📈",
-        "importance": "medium"
+        "importance": "high"
     },
-    "FED_SPEECH": {
-        "keywords": ["powell", "fed chair", "federal reserve", "fed governor"],
-        "emoji": "🎤",
-        "importance": "medium"
-    },
-    "TREASURY": {
-        "keywords": ["treasury yield", "10-year", "2-year", "bond auction", "yield curve"],
-        "emoji": "📉",
-        "importance": "medium"
+    "FED_RATE": {
+        "keywords": ["fed", "federal reserve"],
+        "required_keywords": ["rate cut", "rate hike", "basis points", "bps"],
+        "emoji": "🏦",
+        "importance": "high"
     }
 }
+
+# Keywords that indicate NOISE (administrative, routine items) - skip these
+NOISE_KEYWORDS = [
+    "enforcement action", "application", "approval", "terminate", "termination",
+    "manual", "supervision", "employee", "former employee", "bank holding",
+    "pricing", "payment services", "check services", "debit card",
+    "reappointment", "reserve bank president", "first vice president",
+    "public input", "request comment", "staff manual", "biennial report"
+]
 
 
 def detect_macro_event_type(title: str, summary: str = "") -> Optional[str]:
     """
     Detect the type of macro event from content.
     
-    Returns event type key or None.
+    Only returns event type for MAJOR announcements.
+    Filters out routine administrative Fed items.
     """
     combined = (title + " " + summary).lower()
     
+    # First, check if this is noise (administrative, routine items)
+    if any(noise in combined for noise in NOISE_KEYWORDS):
+        return None
+    
     for event_type, config in MACRO_EVENTS.items():
+        # Must match a primary keyword
         if any(kw in combined for kw in config["keywords"]):
-            return event_type
+            # Must ALSO match a required keyword (to filter out vague matches)
+            required = config.get("required_keywords", [])
+            if required:
+                if any(req in combined for req in required):
+                    return event_type
+            else:
+                return event_type
     
     return None
 
