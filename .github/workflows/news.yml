@@ -1,0 +1,50 @@
+name: News Poll
+
+on:
+  schedule:
+    # Run every hour at minute 30 (offset from canvas to spread load)
+    - cron: '30 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Download previous state
+        uses: actions/download-artifact@v4
+        with:
+          name: state-latest
+          path: state/
+        continue-on-error: true
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run news poll
+        run: python -m src.jobs.run_news
+        env:
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_EARNINGS: ${{ secrets.DISCORD_WEBHOOK_EARNINGS }}
+          DISCORD_WEBHOOK_MACRO: ${{ secrets.DISCORD_WEBHOOK_MACRO }}
+          DISCORD_WEBHOOK_MARKET_ALERTS: ${{ secrets.DISCORD_WEBHOOK_MARKET_ALERTS }}
+          DISCORD_WEBHOOK_ANALYST: ${{ secrets.DISCORD_WEBHOOK_ANALYST }}
+          DISCORD_WEBHOOK_VALUATION: ${{ secrets.DISCORD_WEBHOOK_VALUATION }}
+          DISCORD_WEBHOOK_BRIDGE: ${{ secrets.DISCORD_WEBHOOK_BRIDGE }}
+      
+      - name: Upload updated state
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-latest
+          path: state/
+          retention-days: 30
+          if-no-files-found: ignore

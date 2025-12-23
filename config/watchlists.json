@@ -1,0 +1,32 @@
+{
+  "tickers": [
+    "AAPL", "MSFT", "NVDA", "GOOGL", "GOOG", "AMZN", "META", "TSLA",
+    "AMD", "INTC", "AVGO", "CRM", "ORCL", "ADBE", "NOW", "SNOW",
+    "PLTR", "NET", "DDOG", "ZS", "CRWD", "MDB", "SHOP"
+  ],
+  "ai_keywords": [
+    "AI", "artificial intelligence", "machine learning", "ML",
+    "LLM", "large language model", "GPT", "ChatGPT", "Claude",
+    "OpenAI", "Anthropic", "Google AI", "Gemini", "Llama",
+    "inference", "training", "GPU", "datacenter", "data center",
+    "NVIDIA", "H100", "A100", "transformer", "neural network",
+    "generative AI", "GenAI", "foundation model", "AI model"
+  ],
+  "macro_keywords": [
+    "CPI", "consumer price index", "inflation",
+    "PCE", "personal consumption",
+    "FOMC", "Federal Reserve", "Fed", "interest rate", "rate cut", "rate hike",
+    "Treasury", "yield", "10-year", "2-year",
+    "unemployment", "jobs report", "nonfarm payroll", "NFP",
+    "GDP", "economic growth", "recession",
+    "quantitative easing", "QE", "quantitative tightening", "QT"
+  ],
+  "trusted_sources": [
+    "reuters.com",
+    "bloomberg.com",
+    "wsj.com",
+    "ft.com",
+    "sec.gov",
+    "federalreserve.gov"
+  ]
+}

@@ -1,0 +1,49 @@
+name: Daily Brief
+
+on:
+  schedule:
+    # Run at 8:00 AM America/Kentucky/Louisville (EST/EDT)
+    # EST (winter): UTC-5, so 8 AM = 13:00 UTC
+    # EDT (summer): UTC-4, so 8 AM = 12:00 UTC
+    # Using 13:00 UTC (8 AM EST). During EDT it will be 9 AM.
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Download previous state
+        uses: actions/download-artifact@v4
+        with:
+          name: state-latest
+          path: state/
+        continue-on-error: true
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run daily brief
+        run: python -m src.jobs.run_daily_brief
+        env:
+          CANVAS_BASE_URL: ${{ secrets.CANVAS_BASE_URL }}
+          CANVAS_TOKEN: ${{ secrets.CANVAS_TOKEN }}
+          DISCORD_WEBHOOK_DAILY: ${{ secrets.DISCORD_WEBHOOK_DAILY }}
+      
+      - name: Upload updated state
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-latest
+          path: state/
+          retention-days: 30
+          if-no-files-found: ignore

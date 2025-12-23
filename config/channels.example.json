@@ -1,0 +1,45 @@
+{
+  "_comment": "Copy this to channels.json and fill in your webhook URLs (or use env vars)",
+  "channels": {
+    "daily_brief": {
+      "env_var": "DISCORD_WEBHOOK_DAILY",
+      "description": "Daily academic brief"
+    },
+    "alerts": {
+      "env_var": "DISCORD_WEBHOOK_ALERTS",
+      "description": "Urgent academic alerts"
+    },
+    "study_plan": {
+      "env_var": "DISCORD_WEBHOOK_STUDYPLAN",
+      "description": "Study plan recommendations"
+    },
+    "ai_tech": {
+      "env_var": "DISCORD_WEBHOOK_AI",
+      "description": "AI and tech shift news"
+    },
+    "earnings": {
+      "env_var": "DISCORD_WEBHOOK_EARNINGS",
+      "description": "Earnings watch alerts"
+    },
+    "macro": {
+      "env_var": "DISCORD_WEBHOOK_MACRO",
+      "description": "Macro signals (Fed, CPI, etc.)"
+    },
+    "market_alerts": {
+      "env_var": "DISCORD_WEBHOOK_MARKET_ALERTS",
+      "description": "General market alerts"
+    },
+    "analyst": {
+      "env_var": "DISCORD_WEBHOOK_ANALYST",
+      "description": "If I were an analyst prompts"
+    },
+    "valuation": {
+      "env_var": "DISCORD_WEBHOOK_VALUATION",
+      "description": "Valuation context posts"
+    },
+    "classroom_bridge": {
+      "env_var": "DISCORD_WEBHOOK_BRIDGE",
+      "description": "Finance concept mapping (optional)"
+    }
+  }
+}
